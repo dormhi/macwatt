@@ -49,7 +49,8 @@
 @end
 
 // IORegistry'den yavaş alanları tazeler. Pil servisi yoksa NO.
-BOOL PowerReadSlow(PowerSample *sample);
+// includeCharger: şarj cihazı/kablo kimliğini de yeniden tara (pahalı; fiş değişince ve popover açılınca).
+BOOL PowerReadSlow(PowerSample *sample, BOOL includeCharger);
 
 // SMC'den anlık V/A/W okur ve türetilen alanları hesaplar.
 void PowerReadFast(PowerSample *sample);

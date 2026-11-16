@@ -6,7 +6,7 @@
 // SMC değerleri ~1 sn'de bir değişiyor; yarım saniyede bir okumak yeni değeri en geç 0.5 sn gecikmeyle gösterir.
 static const NSTimeInterval kFastInterval = 0.5;
 // Adaptör, kalan süre, sıcaklık gibi yavaş değişen IORegistry alanları.
-static const NSTimeInterval kSlowInterval = 3.0;
+static const NSTimeInterval kSlowInterval = 5.0;
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 - (void)powerSourceChanged;
@@ -77,14 +77,17 @@ static void PowerSourceCallback(void *context) {
     [self refresh:NO];
 }
 
-- (void)refresh:(BOOL)forceSlow {
-    CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
-    if (forceSlow || now - self.lastSlowRead >= kSlowInterval) {
-        PowerReadSlow(self.sample);
-        self.lastSlowRead = now;
+// full: pil kaydı + şarj cihazı kimliği de baştan okunur (fiş değişimi, popover açılışı).
+- (void)refresh:(BOOL)full {
+    @autoreleasepool {
+        CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+        if (full || now - self.lastSlowRead >= kSlowInterval) {
+            PowerReadSlow(self.sample, full);
+            self.lastSlowRead = now;
+        }
+        PowerReadFast(self.sample);
+        [self render];
     }
-    PowerReadFast(self.sample);
-    [self render];
 }
 
 - (void)togglePopover:(id)sender {
@@ -93,18 +96,26 @@ static void PowerSourceCallback(void *context) {
         return;
     }
     [self refresh:YES];
+    [self updatePopoverView];
     NSStatusBarButton *button = self.statusItem.button;
     [self.popover showRelativeToRect:button.bounds ofView:button preferredEdge:NSRectEdgeMinY];
     [NSApp activateIgnoringOtherApps:YES];
 }
 
-- (void)render {
-    PowerSample *s = self.sample;
-
-    [self.powerView updateWithSample:s];
+- (void)updatePopoverView {
+    [self.powerView updateWithSample:self.sample];
     NSSize fitting = self.powerView.fittingSize;
     if (fitting.width > 0 && fitting.height > 0 && !NSEqualSizes(fitting, self.popover.contentSize)) {
         self.popover.contentSize = fitting;
+    }
+}
+
+- (void)render {
+    PowerSample *s = self.sample;
+
+    // Popover kapalıyken arayüz yerleşimi hesaplanmaz; yalnızca menü çubuğu metni güncellenir.
+    if (self.popover.shown) {
+        [self updatePopoverView];
     }
 
     NSStatusBarButton *button = self.statusItem.button;
@@ -131,14 +142,16 @@ static void PowerSourceCallback(void *context) {
     if (s.powerConnected && s.charger) {
         [tip appendFormat:@"\n%@", s.charger.displayName];
     }
-    button.toolTip = tip;
+    if (![button.toolTip isEqualToString:tip]) {
+        button.toolTip = tip;
+    }
 }
 
 @end
 
 static void PrintSample(void) {
     PowerSample *s = [[PowerSample alloc] init];
-    if (!PowerReadSlow(s)) {
+    if (!PowerReadSlow(s, YES)) {
         printf("Pil verisi okunamadı\n");
         return;
     }

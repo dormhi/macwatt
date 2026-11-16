@@ -21,6 +21,14 @@ Root yetkisi gerekmez.
 
 ## Kurulum
 
+### DMG ile
+
+1. [Releases](https://github.com/dormhi/macwatt/releases) sayfasından `MacWatt-<sürüm>.dmg` dosyasını indirin.
+2. DMG'yi açın, `MacWatt.app`'i `Applications` klasörüne sürükleyin.
+3. İlk açılışta macOS "geliştirici doğrulanamadı" uyarısı verir (uygulama Apple Developer ID ile imzalı değil). **Sistem Ayarları → Gizlilik ve Güvenlik** altında **Yine de Aç**'a basın. Bu yalnızca bir kez gerekir.
+
+### Kaynaktan
+
 ```bash
 git clone https://github.com/dormhi/macwatt.git
 cd macwatt
@@ -32,6 +40,7 @@ Uygulama `/Applications/MacWatt.app` olarak kurulur ve açılır.
 | Komut | Ne yapar |
 | --- | --- |
 | `./build.sh` | Yalnızca derler (`build/MacWatt.app`) |
+| `./package.sh` | Dağıtım DMG'si üretir (`dist/MacWatt-<sürüm>.dmg`) |
 | `./install.sh` | Derler, kurar, başlatır |
 | `./install.sh --autostart` | Ayrıca oturum açılışında otomatik başlatır |
 | `./install.sh --autostart-off` | Otomatik başlatmayı kapatır |

@@ -306,20 +306,43 @@ static ChargerInfo *ReadCharger(NSDictionary *battery) {
 
 #pragma mark - Okuma
 
-BOOL PowerReadSlow(PowerSample *s) {
-    io_service_t service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSmartBattery"));
+// AppleSmartBattery'nin tüm sözlüğü (BatteryData, LifetimeData vb.) büyük; yalnızca gereken anahtarlar okunur.
+static NSDictionary *BatteryProperties(void) {
+    static io_service_t service = IO_OBJECT_NULL;
     if (service == IO_OBJECT_NULL) {
+        service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSmartBattery"));
+        if (service == IO_OBJECT_NULL) {
+            return nil;
+        }
+    }
+    static NSArray<NSString *> *keys;
+    if (keys == nil) {
+        keys = @[@"ExternalConnected", @"FullyCharged", @"CurrentCapacity", @"Temperature",
+                 @"AvgTimeToEmpty", @"AvgTimeToFull", @"ChargerData", @"PowerTelemetryData",
+                 @"Voltage", @"InstantAmperage", @"Amperage", @"AdapterDetails"];
+    }
+    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:keys.count];
+    for (NSString *key in keys) {
+        CFTypeRef value = IORegistryEntryCreateCFProperty(service, (__bridge CFStringRef)key, kCFAllocatorDefault, 0);
+        if (value) {
+            dict[key] = CFBridgingRelease(value);
+        }
+    }
+    if (dict[@"CurrentCapacity"] == nil) {
+        // Servis kaybolduysa (çok nadir) bir sonraki çağrıda yeniden bul.
+        IOObjectRelease(service);
+        service = IO_OBJECT_NULL;
+        return nil;
+    }
+    return dict;
+}
+
+BOOL PowerReadSlow(PowerSample *s, BOOL includeCharger) {
+    NSDictionary *dict = BatteryProperties();
+    if (dict == nil) {
         s.registryOK = NO;
         return NO;
     }
-    CFMutableDictionaryRef properties = NULL;
-    kern_return_t result = IORegistryEntryCreateCFProperties(service, &properties, kCFAllocatorDefault, 0);
-    IOObjectRelease(service);
-    if (result != KERN_SUCCESS || properties == NULL) {
-        s.registryOK = NO;
-        return NO;
-    }
-    NSDictionary *dict = CFBridgingRelease(properties);
     s.registryOK = YES;
 
     s.externalConnected = [dict[@"ExternalConnected"] boolValue];
@@ -347,7 +370,12 @@ BOOL PowerReadSlow(PowerSample *s) {
     }
     s.regBatteryA = (double)current / 1000.0;
 
-    s.charger = s.externalConnected ? ReadCharger(dict) : nil;
+    if (!s.externalConnected) {
+        s.charger = nil;
+    } else if (includeCharger || s.charger == nil) {
+        // USB-PD port ağacını taramak pahalı; yalnızca istenince (fiş değişimi, popover açılışı) yapılır.
+        s.charger = ReadCharger(dict);
+    }
     return YES;
 }
 
