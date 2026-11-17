@@ -21,10 +21,7 @@
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/popover-charging-dark.png">
-    <img src="docs/images/popover-charging-light.png" width="420" alt="Şarj sırasında MacWatt penceresi: adaptör girişi, pil gücü, beş güç profilli 100 W USB-PD şarj aleti ve Belkin 5 A kablo">
-  </picture>
+  <img src="docs/images/screenshot.jpg" width="440" alt="MacWatt macOS menü çubuğunda: menü çubuğunda 33.5W ve şarj sırasında açılan ayrıntı penceresi">
 </p>
 
 ---

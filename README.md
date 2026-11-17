@@ -21,10 +21,7 @@
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/popover-charging-dark.png">
-    <img src="docs/images/popover-charging-light.png" width="420" alt="MacWatt popover while charging: charger input, battery power, a 100 W USB-PD charger with five power profiles and a Belkin 5 A cable">
-  </picture>
+  <img src="docs/images/screenshot.jpg" width="440" alt="MacWatt running in the macOS menu bar: 33.5W in the menu bar and the details popover while charging">
 </p>
 
 > [!NOTE]
